@@ -1,16 +1,9 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { validationResult } from "express-validator";
 import UserModel from "../models/User.model.js";
 
 export const register = async (req, res) => {
   try {
-    // ????
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json(errors.array());
-    }
-
     // берем парол из body запроса
     const password = req.body.password;
     // создаем переменную и настраиваем хеш

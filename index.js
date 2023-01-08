@@ -1,22 +1,69 @@
+import multer from "multer";
 import express from "express";
 import mongoose from "mongoose";
-import { registerValidation, loginValidation, articleCreateValidation } from "./validations.js";
-import * as UserController from "./controllers/user.controller.js";
-import * as ArticleController from "./controllers/article.controller.js";
+import {
+  registerValidation,
+  loginValidation,
+  articleCreateValidation,
+} from "./validations.js";
+
+import { handleValidationsErros, checkAuth } from "./utils/index.js";
+
+import { UserController, ArticleController } from "./controllers/index.js";
 
 const app = express();
-import checkAuth from "./utils/checkAuth.js";
+
+const storage = multer.diskStorage({
+  destination: (_, __, cb) => {
+    cb(null, "uploads");
+  },
+  filename: (_, file, cb) => {
+    cb(null, file.originalname);
+  },
+});
+
+const upload = multer({ storage });
+
+app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
+  res.json({
+    url: `/uploads/${req.file.originalname}`,
+  });
+});
 
 app.use(express.json());
-app.post("/auth/login", loginValidation, UserController.login);
-app.post("/auth/register", registerValidation, UserController.register);
+app.use("/uploads", express.static("uploads"));
+
+app.post(
+  "/auth/login",
+  handleValidationsErros,
+  loginValidation,
+  UserController.login
+);
+app.post(
+  "/auth/register",
+  handleValidationsErros,
+  registerValidation,
+  UserController.register
+);
 app.get("/auth/me", checkAuth, UserController.getMe);
 
-app.get("/posts", ArticleController.getAll)
-app.get("/posts/:id", ArticleController.getOne)
-app.post("/posts", checkAuth, articleCreateValidation, ArticleController.create)
-app.delete("/posts/:id", checkAuth, ArticleController.remove)
-app.patch("/posts/:id", checkAuth, ArticleController.update)
+app.get("/posts", ArticleController.getAll);
+app.get("/posts/:id", ArticleController.getOne);
+app.post(
+  "/posts",
+  checkAuth,
+  handleValidationsErros,
+  articleCreateValidation,
+  ArticleController.create
+);
+app.delete("/posts/:id", checkAuth, ArticleController.remove);
+app.patch(
+  "/posts/:id",
+  checkAuth,
+  handleValidationsErros,
+  articleCreateValidation,
+  ArticleController.update
+);
 
 mongoose
   .connect(
